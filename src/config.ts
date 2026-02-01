@@ -2,6 +2,16 @@ import * as fs from "fs";
 import * as path from "path";
 import * as dotenv from "dotenv";
 
+// Load .env from home directory first (created by setup wizard)
+const homeEnvPath = path.join(
+  process.env.HOME || process.env.USERPROFILE || "~",
+  ".env"
+);
+if (fs.existsSync(homeEnvPath)) {
+  dotenv.config({ path: homeEnvPath });
+}
+
+// Then load from current directory (allows project-specific overrides)
 dotenv.config();
 
 export interface ModelConfig {
