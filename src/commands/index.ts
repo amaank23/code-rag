@@ -65,11 +65,11 @@ export const indexCommand = new Command("index")
 
       spinner.text = `Embedding and indexing ${allChunks.length} chunks...`;
 
-      await indexChunks(allChunks);
+      await indexChunks(allChunks, absolutePath);
 
       spinner.succeed(
         chalk.green(
-          `Successfully indexed ${files.length} files → ${allChunks.length} chunks`
+          `Successfully indexed ${files.length} files → ${allChunks.length} chunks from ${absolutePath}`
         )
       );
     } catch (err) {

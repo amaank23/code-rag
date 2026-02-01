@@ -1,6 +1,8 @@
 import { Command } from "commander";
 import ora from "ora";
 import chalk from "chalk";
+import * as path from "path";
+import * as fs from "fs";
 import { retrieveRelevantChunks } from "../core/retriever";
 import { buildContext } from "../core/context";
 import { config } from "../config";
@@ -9,18 +11,50 @@ import { getLLM } from "../llms/registry";
 export const askCommand = new Command("ask")
   .argument("<question>", "question about the codebase")
   .option("-k, --topk <number>", "number of chunks", "5")
+  .option(
+    "-p, --project <path>",
+    "path to the indexed project",
+    process.cwd()
+  )
   .description("Ask questions about the indexed repository")
   .action(async (question, options) => {
-    const spinner = ora("Searching codebase...").start();
+    const spinner = ora("Validating project path...").start();
 
     try {
+      // Validate and resolve project path
+      const projectPath = path.resolve(options.project);
+      if (!fs.existsSync(projectPath)) {
+        spinner.fail(
+          chalk.red(`Project path does not exist: ${options.project}`)
+        );
+        console.error(
+          chalk.yellow(
+            "\nTip: Use --project <path> to specify the indexed project, or run from the project directory."
+          )
+        );
+        process.exit(1);
+      }
+
+      spinner.text = "Searching codebase...";
+
       let chunks = await retrieveRelevantChunks(
         question,
+        projectPath,
         Number(options.topk),
       );
 
       if (chunks.length === 0) {
         spinner.fail("No relevant code found.");
+        console.error(
+          chalk.yellow(
+            `\nNo results found in project: ${projectPath}`
+          )
+        );
+        console.error(
+          chalk.yellow(
+            "Make sure you've indexed this project first with: code-rag index <path>"
+          )
+        );
         return;
       }
 
@@ -79,7 +113,7 @@ export const askCommand = new Command("ask")
         context,
       });
 
-      spinner.succeed("Done!");
+      spinner.succeed(`Answer generated from project: ${path.basename(projectPath)}`);
 
       console.log(chalk.cyan("\n📄 Relevant Code Context:\n"));
       console.log(context);

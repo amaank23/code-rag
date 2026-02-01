@@ -10,9 +10,10 @@ export interface RetrievedChunk {
 
 export async function retrieveRelevantChunks(
   query: string,
+  projectPath: string,
   topK = 5,
 ): Promise<RetrievedChunk[]> {
-  const collection = await getCollection();
+  const collection = await getCollection(projectPath);
 
   const queryEmbedding = await embedText(query);
 

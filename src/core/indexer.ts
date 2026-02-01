@@ -2,8 +2,8 @@ import { CodeChunk } from "./chunker";
 import { embedText } from "./embeddings";
 import { getCollection } from "../db/chroma";
 
-export async function indexChunks(chunks: CodeChunk[]) {
-  const collection = await getCollection();
+export async function indexChunks(chunks: CodeChunk[], projectPath: string) {
+  const collection = await getCollection(projectPath);
 
   for (const chunk of chunks) {
     const id = `${chunk.filePath}:${chunk.startLine}-${chunk.endLine}`;
@@ -21,6 +21,7 @@ export async function indexChunks(chunks: CodeChunk[]) {
           endLine: chunk.endLine,
           language: chunk.language,
           symbol: chunk.symbol ?? null,
+          projectPath,
         },
       ],
     });

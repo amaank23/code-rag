@@ -4,6 +4,7 @@ import { Command } from "commander";
 import chalk from "chalk";
 import { indexCommand } from "./commands/index";
 import { askCommand } from "./commands/ask";
+import { collectionsCommand } from "./commands/collections";
 
 // Global error handlers
 process.on("unhandledRejection", (reason) => {
@@ -34,6 +35,7 @@ program
 
 program.addCommand(indexCommand);
 program.addCommand(askCommand);
+program.addCommand(collectionsCommand);
 
 try {
   program.parse();
