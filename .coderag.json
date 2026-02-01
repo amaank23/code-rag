@@ -1,0 +1,14 @@
+{
+  "reranker": "claude",
+  "answerModel": "gemini",
+  "models": {
+    "claude": {
+      "apiKey": "ANTHROPIC_API_KEY",
+      "model": "claude-3-5-sonnet"
+    },
+    "gemini": {
+      "apiKey": "GEMINI_API_KEY",
+      "model": "gemini-1.5-flash"
+    }
+  }
+}
