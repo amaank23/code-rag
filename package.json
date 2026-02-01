@@ -13,7 +13,8 @@
     "watch": "tsc --watch",
     "clean": "rm -rf dist",
     "prepublishOnly": "npm run build",
-    "install:global": "npm run build && npm link"
+    "install:global": "npm run build && npm link && npm run setup:config",
+    "setup:config": "cp .coderag.json ~/.coderag.json 2>/dev/null || cp .coderag.json %USERPROFILE%\\.coderag.json 2>nul || echo 'Config already exists or copy failed'"
   },
   "keywords": [
     "cli",

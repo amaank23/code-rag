@@ -17,12 +17,40 @@ export interface Config {
   };
 }
 
-function loadConfig(): Config {
-  const configPath = path.join(process.cwd(), ".coderag.json");
+/**
+ * Find config file in multiple locations:
+ * 1. Current working directory (.coderag.json)
+ * 2. User's home directory (~/.coderag.json)
+ * 3. Installation directory (code-rag/.coderag.json)
+ */
+function findConfigPath(): string | null {
+  const locations = [
+    // Current directory
+    path.join(process.cwd(), ".coderag.json"),
+    // Home directory
+    path.join(process.env.HOME || process.env.USERPROFILE || "~", ".coderag.json"),
+    // Installation directory (where this file is)
+    path.join(__dirname, "..", ".coderag.json"),
+  ];
 
-  if (!fs.existsSync(configPath)) {
+  for (const location of locations) {
+    if (fs.existsSync(location)) {
+      return location;
+    }
+  }
+
+  return null;
+}
+
+function loadConfig(): Config {
+  const configPath = findConfigPath();
+
+  if (!configPath) {
     throw new Error(
-      ".coderag.json not found. Please create a configuration file in your project root."
+      ".coderag.json not found. Please create a configuration file in one of these locations:\n" +
+      "  1. Current directory: .coderag.json\n" +
+      "  2. Home directory: ~/.coderag.json\n" +
+      "  3. Installation directory: code-rag/.coderag.json"
     );
   }
 
@@ -32,20 +60,20 @@ function loadConfig(): Config {
     rawConfig = JSON.parse(configContent) as Config;
   } catch (err) {
     throw new Error(
-      `Failed to parse .coderag.json: ${err instanceof Error ? err.message : String(err)}`
+      `Failed to parse ${configPath}: ${err instanceof Error ? err.message : String(err)}`
     );
   }
 
   // Validate required fields
   if (!rawConfig.answerModel) {
     throw new Error(
-      "Missing required field 'answerModel' in .coderag.json"
+      `Missing required field 'answerModel' in ${configPath}`
     );
   }
 
   if (!rawConfig.models || typeof rawConfig.models !== "object") {
     throw new Error(
-      "Missing or invalid 'models' configuration in .coderag.json"
+      `Missing or invalid 'models' configuration in ${configPath}`
     );
   }
 
@@ -59,7 +87,7 @@ function loadConfig(): Config {
   for (const [modelName, modelConfig] of Object.entries(rawConfig.models)) {
     if (!modelConfig.apiKey || !modelConfig.model) {
       throw new Error(
-        `Invalid configuration for model '${modelName}': missing apiKey or model field`
+        `Invalid configuration for model '${modelName}': missing apiKey or model field in ${configPath}`
       );
     }
 
