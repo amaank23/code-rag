@@ -4,139 +4,188 @@ A TypeScript-based CLI tool for Retrieval-Augmented Generation (RAG) on codebase
 
 ## Features
 
+- **Interactive Setup Wizard**: Quick onboarding with `code-rag setup`
 - **Smart Code Indexing**: AST-based chunking for TypeScript/JavaScript with fallback for other languages
 - **Semantic Search**: Uses local embeddings (Xenova/all-MiniLM-L6-v2) for fast, API-free similarity search
+- **Per-Project Collections**: Each repository gets its own isolated ChromaDB collection
 - **Vector Storage**: ChromaDB integration for efficient retrieval
 - **LLM-Powered Answers**: Support for Claude (Anthropic) and Gemini (Google) models
 - **Optional Reranking**: Improve result quality with LLM-based reranking
 - **Smart Filtering**: Respects `.gitignore`-style patterns
+- **Collection Management**: List, delete, and manage indexed projects
 
-## Prerequisites
+## Quick Start
 
-### 1. Node.js
-Requires Node.js 18 or higher.
+### 1. Install Globally
 
-### 2. ChromaDB
-code-rag uses ChromaDB for vector storage. You need to run a Chroma server:
+```bash
+git clone <repository-url>
+cd code-rag
+npm run install:global
+```
 
-**Using Docker (Recommended):**
+### 2. Run Setup Wizard
+
+```bash
+code-rag setup
+```
+
+This interactive wizard will:
+- Guide you through API key setup
+- Help you choose models (Claude or Gemini)
+- Configure reranking preferences
+- Create all necessary config files
+
+### 3. Start ChromaDB
+
 ```bash
 docker run -p 8000:8000 chromadb/chroma
 ```
 
-**Or install locally:**
+### 4. Index and Query
+
 ```bash
-pip install chromadb
-chroma run --host localhost --port 8000
+# Index a repository
+code-rag index /path/to/your/project
+
+# Ask questions
+code-rag ask "how does authentication work?"
 ```
 
-### 3. API Keys
-You'll need API keys for the LLM providers you want to use:
+That's it! 🚀
+
+## Prerequisites
+
+### Required
+
+- **Node.js** 18 or higher
+- **ChromaDB** running on localhost:8000
+
+### API Keys (choose one or both)
+
 - **Claude**: Get from [Anthropic Console](https://console.anthropic.com/)
 - **Gemini**: Get from [Google AI Studio](https://makersuite.google.com/app/apikey)
 
 ## Installation
 
-1. **Clone and install dependencies:**
+### Option 1: Quick Install (Recommended)
+
+```bash
+git clone <repository-url>
+cd code-rag
+npm run install:global
+code-rag setup
+```
+
+### Option 2: Manual Install
+
 ```bash
 git clone <repository-url>
 cd code-rag
 npm install
-```
-
-2. **Build the project:**
-```bash
 npm run build
-```
-
-3. **Set up environment variables:**
-```bash
-cp .env.example .env
-```
-
-Edit `.env` and add your API keys:
-```env
-ANTHROPIC_API_KEY=your_anthropic_api_key_here
-GEMINI_API_KEY=your_google_api_key_here
-```
-
-4. **Configure models (optional):**
-
-The default configuration in `.coderag.json` uses Claude for reranking and Gemini for answers:
-```json
-{
-  "reranker": "claude",
-  "answerModel": "gemini",
-  "models": {
-    "claude": {
-      "apiKey": "ANTHROPIC_API_KEY",
-      "model": "claude-3-5-sonnet"
-    },
-    "gemini": {
-      "apiKey": "GEMINI_API_KEY",
-      "model": "gemini-1.5-flash"
-    }
-  }
-}
-```
-
-You can customize the models or disable reranking by setting `"reranker": ""`.
-
-## Usage
-
-### Global Installation (Optional)
-
-For easier access, install globally:
-```bash
 npm link
 ```
 
-Then you can use `code-rag` directly instead of `npm start --`.
+Then run `code-rag setup` to configure interactively, or manually create `~/.env` and `~/.coderag.json` (see Configuration section).
+
+## Usage
+
+### Setup Wizard (Recommended for First Time)
+
+Run the interactive setup to configure everything:
+
+```bash
+code-rag setup
+```
+
+This will:
+- Prompt for your preferred LLM (Claude or Gemini)
+- Configure reranking preferences
+- Collect API keys
+- Create `~/.env` and `~/.coderag.json`
+- Show you next steps
 
 ### Index a Repository
 
-Before asking questions, index your codebase:
+Index your codebase for semantic search:
 
 ```bash
-npm start -- index /path/to/your/repo
-# or with global install:
 code-rag index /path/to/your/repo
+# or use current directory
+code-rag index .
 ```
 
 This will:
 1. Scan the repository (respecting ignore patterns)
 2. Chunk code files using AST analysis
 3. Generate embeddings for each chunk
-4. Store in ChromaDB
+4. Store in ChromaDB with a unique collection per project
 
 **Example:**
 ```bash
-code-rag index ./my-project
+cd ~/my-project
+code-rag index .
+# Successfully indexed 245 files → 1,847 chunks
 ```
 
 ### Ask Questions
 
-Once indexed, ask questions about your codebase:
+Query your indexed codebase with natural language:
 
 ```bash
-npm start -- ask "how does authentication work?"
-# or with global install:
 code-rag ask "how does authentication work?"
 ```
 
 **Options:**
 - `-k, --topk <number>`: Number of code chunks to retrieve (default: 5)
+- `-p, --project <path>`: Specify which project to query (default: current directory)
 
 **Examples:**
 ```bash
 # Ask about specific functionality
-code-rag ask "where is the database connection initialized?"
+code-rag ask "where are the API routes defined?"
 
 # Get more context with higher topk
 code-rag ask "how does the payment flow work?" -k 10
 
+# Query a different project
+code-rag ask "explain the database schema" --project ~/other-project
+
 # Find implementations
 code-rag ask "show me all API endpoints" -k 15
+```
+
+### Manage Collections
+
+Each indexed project gets its own ChromaDB collection. List and manage them:
+
+```bash
+# List all indexed projects
+code-rag collections list
+
+# Delete a specific project
+code-rag collections delete /path/to/project
+
+# Clear all indexed projects (use with caution)
+code-rag collections clear
+```
+
+**Example Output:**
+```
+📚 Indexed Projects (3):
+
+  • my-app
+    Path: /home/user/projects/my-app
+    Collection: code-rag-ab703ad4-my-app
+    Chunks: 1,847
+    Created: 1/15/2025, 2:30:45 PM
+
+  • api-service
+    Path: /home/user/work/api-service
+    Collection: code-rag-f2a1b8c9-api-service
+    Chunks: 892
+    Created: 1/14/2025, 10:15:22 AM
 ```
 
 ## How It Works
@@ -160,8 +209,10 @@ code-rag ask "show me all API endpoints" -k 15
 .
 ├── src/
 │   ├── commands/
+│   │   ├── setup.ts         # Interactive setup wizard
 │   │   ├── index.ts         # Index command implementation
-│   │   └── ask.ts           # Ask command implementation
+│   │   ├── ask.ts           # Ask command implementation
+│   │   └── collections.ts   # Collection management commands
 │   ├── core/
 │   │   ├── scanner.ts       # Repository file scanning
 │   │   ├── chunker.ts       # AST-based code chunking
@@ -188,6 +239,48 @@ code-rag ask "show me all API endpoints" -k 15
 ```
 
 ## Configuration
+
+### Easy Setup (Recommended)
+
+Use the interactive setup wizard:
+```bash
+code-rag setup
+```
+
+This creates both `~/.env` (API keys) and `~/.coderag.json` (model preferences) for you.
+
+### Manual Configuration
+
+If you prefer manual setup, create these files:
+
+**~/.env:**
+```env
+ANTHROPIC_API_KEY=your_anthropic_api_key_here
+GEMINI_API_KEY=your_gemini_api_key_here
+```
+
+**~/.coderag.json:**
+```json
+{
+  "reranker": "claude",
+  "answerModel": "gemini",
+  "models": {
+    "claude": {
+      "apiKey": "ANTHROPIC_API_KEY",
+      "model": "claude-3-5-sonnet-20241022"
+    },
+    "gemini": {
+      "apiKey": "GEMINI_API_KEY",
+      "model": "gemini-1.5-flash"
+    }
+  }
+}
+```
+
+The config file is searched in:
+1. Current directory (`.coderag.json`)
+2. Home directory (`~/.coderag.json`)
+3. Installation directory (fallback)
 
 ### Ignore Patterns
 
