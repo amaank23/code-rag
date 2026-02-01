@@ -5,6 +5,7 @@ import chalk from "chalk";
 import { indexCommand } from "./commands/index";
 import { askCommand } from "./commands/ask";
 import { collectionsCommand } from "./commands/collections";
+import { setupCommand } from "./commands/setup";
 
 // Global error handlers
 process.on("unhandledRejection", (reason) => {
@@ -33,6 +34,7 @@ program
   .description("CLI-based Code Repository Assistant")
   .version("0.1.0");
 
+program.addCommand(setupCommand);
 program.addCommand(indexCommand);
 program.addCommand(askCommand);
 program.addCommand(collectionsCommand);
